@@ -2,32 +2,33 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './user.schema';
-import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UserService {
     constructor(@InjectModel(User.name) private userModel: Model<User>) { }
 
-    async create(createUserDto: { email: string; password: string; name: string }) {
-        const { email, password, name } = createUserDto;
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
+    async createFromFirebase(data: {
+        firebaseUid: string;
+        email: string;
+        name: string;
+        avatar?: string;
+    }) {
         const user = new this.userModel({
-            email: email.toLowerCase(),
-            password: hashedPassword,
-            name,
+            firebaseUid: data.firebaseUid,
+            email: data.email.toLowerCase(),
+            name: data.name,
+            avatar: data.avatar,
         });
 
         return user.save();
     }
 
-    async findByEmail(email: string) {
-        return this.userModel.findOne({ email: email.toLowerCase() });
+    async findByFirebaseUid(firebaseUid: string) {
+        return this.userModel.findOne({ firebaseUid });
     }
 
     async findById(id: string) {
-        return this.userModel.findById(id).select('-password');
+        return this.userModel.findById(id).select('-__v');
     }
 
     async addOrganization(userId: string, orgId: string) {
