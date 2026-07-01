@@ -15,7 +15,7 @@ export class Sprint extends Document {
     @Prop({ type: Date })
     endDate: Date;
 
-    @Prop({ enum: ['planning', 'active', 'completed'] })
+    @Prop({ enum: ['planning', 'active', 'completed'], default: 'planning' })
     status: string;
 
     @Prop({ type: String, ref: 'Project' })

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req, Patch, Delete } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, UseGuards, Req } from '@nestjs/common';
 import { SprintService } from './sprint.service';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 
@@ -8,8 +8,8 @@ export class SprintController {
     constructor(private readonly sprintService: SprintService) { }
 
     @Post()
-    create(@Body() createSprintDto: { name: string; description?: string; projectId: string }, @Req() req: any) {
-        return this.sprintService.create(createSprintDto, req.user._id.toString());
+    create(@Body() createSprintDto: any, @Req() req: any) {
+        return this.sprintService.create(createSprintDto, createSprintDto.project);
     }
 
     @Get('project/:projectId')
@@ -17,13 +17,8 @@ export class SprintController {
         return this.sprintService.findByProject(projectId);
     }
 
-    @Patch(':id')
-    update(@Param('id') id: string, @Body() updateData: any) {
-        return this.sprintService.update(id, updateData);
-    }
-
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.sprintService.remove(id);
+    @Patch(':id/status')
+    updateStatus(@Param('id') id: string, @Body('status') status: string) {
+        return this.sprintService.updateStatus(id, status);
     }
 }
