@@ -53,6 +53,14 @@ export class ProjectService {
         );
     }
 
+    async addSprint(projectId: string, sprintId: string) {
+        return this.projectModel.findByIdAndUpdate(
+            projectId,
+            { $push: { sprints: sprintId } },
+            { new: true }
+        );
+    }
+
     async remove(id: string, userId: string) {
         const project = await this.findById(id);
         // Add permission check if needed

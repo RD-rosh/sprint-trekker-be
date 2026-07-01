@@ -54,4 +54,12 @@ export class OrganizationService {
         }
         return org;
     }
+
+    async addProject(orgId: string, projectId: string) {
+        return this.orgModel.findByIdAndUpdate(
+            orgId,
+            { $push: { projects: projectId } },
+            { new: true }
+        );
+    }
 }
