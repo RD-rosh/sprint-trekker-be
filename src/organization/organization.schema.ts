@@ -10,13 +10,13 @@ export class Organization extends Document {
     description?: string;
 
     @Prop({ type: [{ type: String, ref: 'User' }] })
-    members: string[];
+    members: string[];           // Array of User IDs
+
+    @Prop({ type: String, ref: 'User' })
+    owner: string;               // Firebase User ID
 
     @Prop({ type: [{ type: String, ref: 'Project' }] })
     projects: string[];
-
-    @Prop({ type: String, ref: 'User' })
-    owner: string;
 }
 
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);

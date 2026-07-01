@@ -1,20 +1,23 @@
 import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 
 @Controller('organizations')
-@UseGuards(JwtAuthGuard)
+@UseGuards(FirebaseAuthGuard)
 export class OrganizationController {
     constructor(private organizationService: OrganizationService) { }
 
     @Post()
-    async create(@Body() createOrgDto: { name: string; description?: string }, @Request() req) {
-        return this.organizationService.create(createOrgDto, req.user.id);
+    async create(
+        @Body() createOrgDto: { name: string; description?: string },
+        @Request() req
+    ) {
+        return this.organizationService.create(createOrgDto, req.user._id.toString());
     }
 
     @Get()
     async findByUser(@Request() req) {
-        return this.organizationService.findByUser(req.user.id);
+        return this.organizationService.findByUser(req.user._id.toString());
     }
 
     @Get(':id')

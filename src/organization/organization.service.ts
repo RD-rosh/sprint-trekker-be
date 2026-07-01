@@ -21,20 +21,27 @@ export class OrganizationService {
 
         const savedOrg = await org.save();
 
-        // Add organization to user's list
+        // Link organization to user
         await this.userService.addOrganization(userId, savedOrg._id.toString());
 
         return savedOrg;
     }
 
     async findById(id: string) {
-        const org = await this.orgModel.findById(id).populate('members', 'name email');
+        const org = await this.orgModel
+            .findById(id)
+            .populate('members', 'name email avatar')
+            .populate('owner', 'name email avatar');
+
         if (!org) throw new NotFoundException('Organization not found');
         return org;
     }
 
     async findByUser(userId: string) {
-        return this.orgModel.find({ members: userId }).populate('members', 'name email');
+        return this.orgModel
+            .find({ members: userId })
+            .populate('members', 'name email avatar')
+            .populate('owner', 'name email avatar');
     }
 
     async addMember(orgId: string, memberId: string) {
@@ -42,6 +49,7 @@ export class OrganizationService {
         if (!org.members.includes(memberId)) {
             org.members.push(memberId);
             await org.save();
+
             await this.userService.addOrganization(memberId, orgId);
         }
         return org;
