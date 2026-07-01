@@ -1,57 +1,43 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import * as admin from 'firebase-admin';
 import { UserService } from '../user/user.service';
-import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
-    constructor(
-        private userService: UserService,
-        private jwtService: JwtService,
-    ) { }
-
-    async register(createUserDto: { email: string; password: string; name: string }) {
-        const existingUser = await this.userService.findByEmail(createUserDto.email);
-        if (existingUser) {
-            throw new UnauthorizedException('User with this email already exists');
+    constructor(private userService: UserService) {
+        // Initialize Firebase Admin
+        if (!admin.apps.length) {
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+                }),
+            });
         }
-
-        const user = await this.userService.create(createUserDto);
-
-        const payload = { sub: user._id, email: user.email };
-        const token = this.jwtService.sign(payload);
-
-        return {
-            user: {
-                id: user._id,
-                email: user.email,
-                name: user.name,
-            },
-            token,
-        };
     }
 
-    async login(email: string, password: string) {
-        const user = await this.userService.findByEmail(email);
+    async verifyToken(idToken: string) {
+        try {
+            const decodedToken = await admin.auth().verifyIdToken(idToken);
+            return decodedToken;
+        } catch (error) {
+            throw new UnauthorizedException('Invalid token');
+        }
+    }
+
+    async createOrUpdateUser(uid: string, email: string, name: string, photoURL?: string) {
+        let user = await this.userService.findByFirebaseUid(uid);
+
         if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
+            user = await this.userService.createFromFirebase({
+                firebaseUid: uid,
+                email,
+                name: name || email.split('@')[0],
+                avatar: photoURL,
+            });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        const payload = { sub: user._id, email: user.email };
-        const token = this.jwtService.sign(payload);
-
-        return {
-            user: {
-                id: user._id,
-                email: user.email,
-                name: user.name,
-            },
-            token,
-        };
+        return user;
     }
 }

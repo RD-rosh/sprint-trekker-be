@@ -3,7 +3,7 @@ import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Organization extends Document {
-    @Prop({ required: true })
+    @Prop({ required: true, unique: true })
     name: string;
 
     @Prop()
@@ -14,6 +14,9 @@ export class Organization extends Document {
 
     @Prop({ type: [{ type: String, ref: 'Project' }] })
     projects: string[];
+
+    @Prop({ type: String, ref: 'User' })
+    owner: string;
 }
 
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);
