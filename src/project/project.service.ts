@@ -32,9 +32,21 @@ export class ProjectService {
     async findById(id: string) {
         const project = await this.projectModel
             .findById(id)
-            .populate('organization')
+            .populate({
+                path: 'organization',
+                populate: {
+                    path: 'members',
+                    select: '_id name email avatar',
+                },
+            })
             .populate('sprints')
-            .populate('issues');
+            .populate({
+                path: 'issues',
+                populate: [
+                    { path: 'assignee', select: '_id name email avatar' },
+                    { path: 'sprint' }
+                ]
+            });
 
         if (!project) throw new NotFoundException('Project not found');
         return project;
