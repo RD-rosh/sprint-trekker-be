@@ -31,7 +31,8 @@ export class OrganizationService {
         const org = await this.orgModel
             .findById(id)
             .populate('members', 'name email avatar')
-            .populate('owner', 'name email avatar');
+            .populate('owner', 'name email avatar')
+            .populate('projects', 'name description');
 
         if (!org) throw new NotFoundException('Organization not found');
         return org;
@@ -41,7 +42,8 @@ export class OrganizationService {
         return this.orgModel
             .find({ members: userId })
             .populate('members', 'name email avatar')
-            .populate('owner', 'name email avatar');
+            .populate('owner', 'name email avatar')
+            .populate('projects', 'name description');
     }
 
     async addMember(orgId: string, memberId: string) {
