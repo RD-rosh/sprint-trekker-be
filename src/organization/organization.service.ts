@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Organization } from './organization.schema';
@@ -63,5 +63,38 @@ export class OrganizationService {
             { $push: { projects: projectId } },
             { new: true }
         );
+    }
+
+    async inviteByEmail(orgId: string, email: string) {
+        const user = await this.userService.findByEmail(email);
+        if (!user) throw new NotFoundException(`No user found with email ${email}`);
+
+        const org = await this.orgModel.findById(orgId);
+        if (!org) throw new NotFoundException('Organization not found');
+
+        const userId = user._id.toString();
+        if (org.members.includes(userId as any)) {
+            throw new BadRequestException('User is already a member');
+        }
+
+        org.members.push(userId as any);
+        await org.save();
+        await this.userService.addOrganization(userId, orgId);
+
+        return this.findById(orgId);
+    }
+
+    async removeMember(orgId: string, userId: string) {
+        const org = await this.orgModel.findByIdAndUpdate(
+            orgId,
+            { $pull: { members: userId } },
+            { new: true }
+        )
+            .populate('members', 'name email avatar')
+            .populate('owner', 'name email avatar')
+            .populate('projects', 'name description');
+
+        if (!org) throw new NotFoundException('Organization not found');
+        return org;
     }
 }

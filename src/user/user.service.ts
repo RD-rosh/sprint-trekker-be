@@ -27,6 +27,10 @@ export class UserService {
         return this.userModel.findOne({ firebaseUid });
     }
 
+    async findByEmail(email: string) {
+        return this.userModel.findOne({ email: email.toLowerCase() });
+    }
+
     async findById(id: string) {
         return this.userModel.findById(id).select('-__v');
     }

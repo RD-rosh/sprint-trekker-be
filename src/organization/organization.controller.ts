@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 
@@ -20,5 +20,21 @@ export class OrganizationController {
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.organizationService.findById(id);
+    }
+
+    @Post(':id/members')
+    addMember(
+        @Param('id') orgId: string,
+        @Body('email') email: string,
+    ) {
+        return this.organizationService.inviteByEmail(orgId, email);
+    }
+
+    @Delete(':id/members/:userId')
+    removeMember(
+        @Param('id') orgId: string,
+        @Param('userId') userId: string,
+    ) {
+        return this.organizationService.removeMember(orgId, userId);
     }
 }
