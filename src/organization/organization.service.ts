@@ -1,14 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Organization } from './organization.schema';
 import { UserService } from '../user/user.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class OrganizationService {
+    private readonly logger = new Logger(OrganizationService.name);
+
     constructor(
         @InjectModel(Organization.name) private orgModel: Model<Organization>,
         private userService: UserService,
+        private mailService: MailService,
     ) { }
 
     async create(createOrgDto: { name: string; description?: string }, userId: string) {
@@ -65,7 +69,7 @@ export class OrganizationService {
         );
     }
 
-    async inviteByEmail(orgId: string, email: string) {
+    async inviteByEmail(orgId: string, email: string, invitedById?: string) {
         const user = await this.userService.findByEmail(email);
         if (!user) throw new NotFoundException(`No user found with email ${email}`);
 
@@ -80,6 +84,23 @@ export class OrganizationService {
         org.members.push(userId as any);
         await org.save();
         await this.userService.addOrganization(userId, orgId);
+
+        // Send invite/notification email
+        try {
+            const inviter = invitedById ? await this.userService.findById(invitedById) : null;
+            const invitedByName = inviter?.name || inviter?.email || 'A teammate';
+            const inviteLink = `${process.env.FRONTEND_BASE || 'http://localhost:3000'}/organizations/${orgId}`;
+
+            await this.mailService.sendOrgInvite({
+                to: user.email,
+                orgName: org.name,
+                invitedBy: invitedByName,
+                inviteLink,
+            });
+        } catch (err) {
+            this.logger.error('Failed to send invite email', (err as any)?.message || err);
+            // don't block the main flow if email fails
+        }
 
         return this.findById(orgId);
     }

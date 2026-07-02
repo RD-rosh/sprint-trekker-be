@@ -26,8 +26,10 @@ export class OrganizationController {
     addMember(
         @Param('id') orgId: string,
         @Body('email') email: string,
+        @Req() req: any,
     ) {
-        return this.organizationService.inviteByEmail(orgId, email);
+        const inviterId = req.user?._id?.toString();
+        return this.organizationService.inviteByEmail(orgId, email, inviterId);
     }
 
     @Delete(':id/members/:userId')

@@ -5,6 +5,7 @@ import { OrganizationController } from './organization.controller';
 import { Organization, OrganizationSchema } from './organization.schema';
 import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';
+import { MailService } from '../mail/mail.service';
 
 @Module({
     imports: [
@@ -15,7 +16,7 @@ import { AuthModule } from '../auth/auth.module';
         AuthModule,
     ],
     controllers: [OrganizationController],
-    providers: [OrganizationService],
+    providers: [OrganizationService, MailService],
     exports: [OrganizationService],
 })
 export class OrganizationModule { }
