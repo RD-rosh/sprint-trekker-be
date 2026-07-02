@@ -1,28 +1,41 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
     constructor(private userService: UserService) {
         // Initialize Firebase Admin
-        if (!admin.apps.length) {
-            admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId: process.env.FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-                }),
-            });
+        if (!getApps().length) {
+            try {
+                const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+                if (!privateKey || !privateKey.includes('BEGIN PRIVATE KEY')) {
+                    throw new Error('FIREBASE_PRIVATE_KEY is missing or is not a valid PEM private key string.');
+                }
+                initializeApp({
+                    credential: cert({
+                        projectId: process.env.FIREBASE_PROJECT_ID,
+                        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                        privateKey,
+                    }),
+                });
+            } catch (error: any) {
+                console.warn('⚠️ Firebase Admin SDK was not initialized:', error.message);
+                console.warn('⚠️ Authentication verification endpoints will fail, but the server will boot.');
+            }
         }
     }
 
     async verifyToken(idToken: string) {
         try {
-            const decodedToken = await admin.auth().verifyIdToken(idToken);
+            if (!getApps().length) {
+                throw new Error('Firebase Admin SDK is not initialized');
+            }
+            const decodedToken = await getAuth().verifyIdToken(idToken);
             return decodedToken;
-        } catch (error) {
-            throw new UnauthorizedException('Invalid token');
+        } catch (error: any) {
+            throw new UnauthorizedException(error.message || 'Invalid token');
         }
     }
 

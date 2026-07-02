@@ -4,6 +4,7 @@ import { OrganizationService } from './organization.service';
 import { OrganizationController } from './organization.controller';
 import { Organization, OrganizationSchema } from './organization.schema';
 import { UserModule } from '../user/user.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
@@ -11,6 +12,7 @@ import { UserModule } from '../user/user.module';
             { name: Organization.name, schema: OrganizationSchema },
         ]),
         UserModule,
+        AuthModule,
     ],
     controllers: [OrganizationController],
     providers: [OrganizationService],

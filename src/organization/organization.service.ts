@@ -31,7 +31,8 @@ export class OrganizationService {
         const org = await this.orgModel
             .findById(id)
             .populate('members', 'name email avatar')
-            .populate('owner', 'name email avatar');
+            .populate('owner', 'name email avatar')
+            .populate('projects', 'name description');
 
         if (!org) throw new NotFoundException('Organization not found');
         return org;
@@ -41,7 +42,8 @@ export class OrganizationService {
         return this.orgModel
             .find({ members: userId })
             .populate('members', 'name email avatar')
-            .populate('owner', 'name email avatar');
+            .populate('owner', 'name email avatar')
+            .populate('projects', 'name description');
     }
 
     async addMember(orgId: string, memberId: string) {
@@ -53,5 +55,13 @@ export class OrganizationService {
             await this.userService.addOrganization(memberId, orgId);
         }
         return org;
+    }
+
+    async addProject(orgId: string, projectId: string) {
+        return this.orgModel.findByIdAndUpdate(
+            orgId,
+            { $push: { projects: projectId } },
+            { new: true }
+        );
     }
 }
